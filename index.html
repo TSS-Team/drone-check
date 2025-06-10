@@ -146,7 +146,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             if (!SCRIPT_URL.startsWith("https://script.google.com")) {
-                alert("https://script.google.com/macros/s/AKfycbwm3ftjLck-vpeMJi_oETY_QhVMEibw782Hf1r5dLDg5NfMEGF7JhexQ_OpVwB1yR4/exec");
+                alert("กรุณาใส่ URL ของเว็บแอปในโค้ดก่อน");
             } else { fetchData(); }
             problemSearchBar.addEventListener('input', (e) => renderProblems(currentCategory.problems, e.target.value));
         });
