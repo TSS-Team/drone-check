@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drone Guideline V2</title>
+    <title>Drone Check App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0ea5e9">
@@ -14,33 +14,32 @@
         .screen.active { display: block; }
         #loader { border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        details > summary { list-style: none; }
+        details > summary { list-style: none; cursor: pointer; }
         details > summary::-webkit-details-marker { display: none; }
-        details > summary::after { content: ' ▼'; font-size: 0.8em; }
-        details[open] > summary::after { content: ' ▲'; }
+        details > summary::before { content: '▶'; font-size: 0.8em; margin-right: 8px; display: inline-block; transition: transform 0.2s; }
+        details[open] > summary::before { transform: rotate(90deg); }
     </style>
 </head>
 <body class="bg-gray-100">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg flex flex-col">
-        <header class="p-4 bg-sky-600 text-white text-center shadow-md sticky top-0 z-20"><h1 class="text-2xl font-bold">Drone Guideline</h1></header>
+        <header class="p-4 bg-sky-600 text-white text-center shadow-md sticky top-0 z-20">
+            <h1 class="text-2xl font-bold">Drone Check App</h1>
+            <p class="text-xs opacity-80">Powered by TSS</p>
+        </header>
         <main class="flex-grow">
             <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center hidden"><div class="flex flex-col items-center bg-white p-8 rounded-lg shadow-xl"><div id="loader"></div><p class="mt-4 text-lg">กำลังโหลดข้อมูล...</p></div></div>
-
             <div id="category-screen" class="screen active p-4"><h2 class="text-xl font-bold mb-4">1. เลือกกลุ่มอาการเสีย</h2><div id="category-list" class="grid grid-cols-2 gap-4"></div></div>
-
             <div id="problem-screen" class="screen"><div class="p-4 border-b flex items-center"><button class="mr-4" onclick="showScreen('category-screen')">&larr;</button><div><h2 class="text-xl font-bold" id="problem-screen-title">2. เลือกอาการเสีย</h2><input type="text" id="problem-search-bar" placeholder="ค้นหาในกลุ่มนี้..." class="w-full p-2 mt-2 border rounded-lg"></div></div><ul id="problem-list" class="p-4 space-y-2"></ul></div>
-
             <div id="guideline-screen" class="screen"><div class="p-4 border-b flex items-center"><button class="mr-4" onclick="showScreen('problem-screen')">&larr;</button><h2 class="text-xl font-bold truncate" id="guideline-title"></h2></div><div id="guideline-content" class="p-4"></div></div>
         </main>
     </div>
-
-    <div id="layer2-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center hidden p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-sm"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-lg font-bold">Layer 2: สิ่งที่ต้องเก็บข้อมูล</h3><button onclick="toggleLayer2Modal(false)" class="font-bold text-xl">&times;</button></div><div id="layer2-modal-content" class="p-4"></div></div></div>
+    <div id="layer2-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center hidden p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-sm"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-lg font-bold">ขั้นตอนที่ 2: สิ่งที่ต้องเก็บข้อมูล</h3><button onclick="toggleLayer2Modal(false)" class="font-bold text-xl">&times;</button></div><div id="layer2-modal-content" class="p-4"></div></div></div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwm3ftjLck-vpeMJi_oETY_QhVMEibw782Hf1r5dLDg5NfMEGF7JhexQ_OpVwB1yR4/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2v9Y80L_fkE4eLD-mzlhytbb9jHiqCcIyf3ElSG5lbzQhk0K4PRN0nTrHDpfANZST/exec";
         let allData = []; let currentCategory = null;
 
-        const screens = document.querySelectorAll('.screen');
+        const screens = Array.from(document.querySelectorAll('.screen'));
         const categoryListEl = document.getElementById('category-list');
         const problemListEl = document.getElementById('problem-list');
         const problemScreenTitleEl = document.getElementById('problem-screen-title');
@@ -52,6 +51,7 @@
 
         function showScreen(screenId) { screens.forEach(s => s.classList.toggle('active', s.id === screenId)); window.scrollTo(0, 0); }
         function showLoader(show) { document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none'; }
+        function toggleLayer2Modal(show) { layer2Modal.style.display = show ? 'flex' : 'none'; }
 
         async function fetchData() {
             showLoader(true);
@@ -59,7 +59,7 @@
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
                 if (data.success) { allData = data.categories; renderCategories(); } 
-                else { throw new Error(data.message); }
+                else { throw new Error(data.message || 'Unknown error from API'); }
             } catch (error) { console.error(error); alert('ไม่สามารถโหลดข้อมูลได้: ' + error.message); } 
             finally { showLoader(false); }
         }
@@ -94,37 +94,33 @@
 
         function renderGuideline(problem) {
             guidelineTitleEl.textContent = problem.problem_name;
-            guidelineContentEl.innerHTML = `
-                <div class="space-y-4">
-                    <h3 class="text-xl font-bold text-gray-700">Layer 1: ขั้นตอนการวินิจฉัย</h3>
-                    ${problem.steps.map(step => `
-                        <div class="p-4 rounded-lg border bg-white shadow-sm">
-                            <h4 class="text-lg font-semibold mb-2">Step ${step.step_number}: ${step.step_title}</h4>
-                            <div class="space-y-3 pl-2">
-                            ${step.options.map(option => `
-                                <details class="p-3 rounded-md bg-gray-50 border">
-                                    <summary class="font-semibold cursor-pointer">${option.option_letter}. ${option.option_title}</summary>
-                                    <div class="mt-3 pt-3 border-t pl-4">
-                                        ${renderResult(option.result_text, option.result_type)}
-                                    </div>
-                                </details>
-                            `).join('')}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+            const layer1Html = problem.steps.map(step => `
+                <div class="p-4 rounded-lg border bg-white shadow-sm mb-4">
+                    <h4 class="text-lg font-semibold mb-3">Step ${step.step_number}: ${step.step_title}</h4>
+                    <div class="space-y-3 pl-2">${renderOptions(step.options)}</div>
+                </div>`).join('');
+
+            const layer2Html = `
                 <div class="mt-8 text-center border-t pt-6">
-                    <h3 class="text-xl font-bold text-gray-700 mb-4">Layer 2: สิ่งที่ต้องเก็บข้อมูล</h3>
+                    <h3 class="text-xl font-bold text-gray-700 mb-4">ขั้นตอนที่ 2: สิ่งที่ต้องเก็บข้อมูล</h3>
                     <button onclick="renderLayer2Modal('${problem.problem_id}')" class="w-full bg-sky-500 text-white font-bold py-3 rounded-lg shadow-md">กดเพื่อดูรายการ</button>
-                </div>
-            `;
+                </div>`;
+
+            guidelineContentEl.innerHTML = `<h3 class="text-xl font-bold text-gray-700 mb-4">ขั้นตอนที่ 1: การวินิจฉัย</h3>${layer1Html}${layer2Html}`;
         }
 
-        function renderResult(text, type) {
-            let bgColor = 'bg-gray-100';
-            if (type === 'claimable') bgColor = 'bg-green-100 text-green-800';
-            if (type === 'not_claimable') bgColor = 'bg-red-100 text-red-800';
-            return `<div class="p-2 rounded-md ${bgColor}">${text}</div>`;
+        function renderOptions(options, isSubOption = false) {
+            return options.map(option => `
+                <details class="p-3 rounded-md ${isSubOption ? 'bg-white border' : 'bg-gray-50 border'}">
+                    <summary class="font-semibold">${option.option_letter}. ${option.option_title}</summary>
+                    <div class="mt-3 pt-3 border-t ${isSubOption ? 'pl-2' : 'pl-4'}">
+                        ${option.children && option.children.length > 0
+                            ? `<p class="text-sm text-gray-600 mb-2">${option.result_text}</p><div class="pl-2 space-y-3">${renderOptions(option.children, true)}</div>`
+                            : `<p class="p-2 bg-gray-100 rounded-md"><b>สิ่งที่ต้องทำ:</b> ${option.result_text}</p>`
+                        }
+                    </div>
+                </details>
+            `).join('');
         }
 
         function renderLayer2Modal(problemId) {
@@ -138,10 +134,6 @@
             }
             layer2ModalContent.innerHTML = itemsHtml;
             toggleLayer2Modal(true);
-        }
-
-        function toggleLayer2Modal(show) {
-            layer2Modal.style.display = show ? 'flex' : 'none';
         }
 
         document.addEventListener('DOMContentLoaded', () => {
